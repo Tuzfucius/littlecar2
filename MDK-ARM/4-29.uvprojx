@@ -417,6 +417,11 @@
               <FilePath>../Core/Src/wit_imu.c</FilePath>
             </File>
             <File>
+              <FileName>jetson_debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/jetson_debug.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>

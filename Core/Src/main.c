@@ -28,6 +28,7 @@
 #include "Emm_V5.h"
 #include "zdt_stepper.h"
 #include "chassis_motion.h"
+#include "jetson_debug.h"
 
 /* USER CODE END Includes */
 
@@ -195,6 +196,10 @@ int main(void)
   BusServo_Init(&huart4);
   OPS_Init(&huart5);
   WIT_Init();
+  if (JetsonDebug_Init(&huart6) != JETSON_DEBUG_STATUS_OK)
+  {
+    printf("JetsonDebug init failed\r\n");
+  }
   printf("USART1 printf ready\r\n");
   HAL_Delay(1000);
 
@@ -215,6 +220,7 @@ int main(void)
     // BusServo_Poll();
     OPS_Poll();
     WIT_Poll();
+    JetsonDebug_Poll();
     situation_led();
 
     // if ((HAL_GetTick() - g_wit_print_tick) >= 1000U)
@@ -586,6 +592,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
   {
     WIT_OnUartRxEvent(huart, Size);
   }
+
+  if (huart->Instance == USART6)
+  {
+    JetsonDebug_OnUartRxEvent(huart, Size);
+  }
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -603,6 +614,11 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
   if (huart->Instance == USART2)
   {
     WIT_OnUartError(huart);
+  }
+
+  if (huart->Instance == USART6)
+  {
+    JetsonDebug_OnUartError(huart);
   }
 }
 
