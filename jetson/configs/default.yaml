@@ -16,3 +16,6 @@ comm:
     port: /dev/ttyTHS1
     baudrate: 115200
     timeout: 0.1
+
+app:
+  loop_interval_s: 0.05

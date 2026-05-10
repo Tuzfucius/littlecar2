@@ -32,4 +32,15 @@ python scripts/test_qr.py --image assets/同色.png
 python scripts/test_yolo.py --image assets/sim_train_00025.jpg
 python scripts/test_uart.py --mock
 littlecar2 --config configs/default.yaml --once assets/同色.png
+littlecar2 --config configs/default.yaml --camera --mock-comm
 ```
+
+## 主流程位置
+
+整体流程主函数写在 `src/littlecar2/app/robot_main.py`。
+
+- `RobotMain.run_once_image(...)`：处理单张图片，适合离线调试。
+- `RobotMain.run_camera_loop(...)`：打开摄像头循环运行，适合上车主流程。
+- `RobotMain.handle_event(...)`：把二维码和 YOLO 识别结果转换为后续动作的位置，后续 STM32 控制命令应从这里继续接入。
+
+`src/littlecar2/app/main.py` 只是命令行入口，不建议在里面堆业务逻辑。
