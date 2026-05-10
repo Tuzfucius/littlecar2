@@ -54,6 +54,7 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart6;
+DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
@@ -536,6 +537,9 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+  /* DMA2_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
@@ -591,10 +595,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     OPS_OnByteReceived();
   }
 
-  if (huart->Instance == USART1)
-  {
-    HostRx_OnPcByteReceived(huart);
-  }
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
@@ -604,9 +604,14 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     WIT_OnUartRxEvent(huart, Size);
   }
 
+  if (huart->Instance == USART1)
+  {
+    HostRx_OnUartRxEvent(huart, Size);
+  }
+
   if (huart->Instance == USART6)
   {
-    HostRx_OnJetsonUartRxEvent(huart, Size);
+    HostRx_OnUartRxEvent(huart, Size);
   }
 }
 

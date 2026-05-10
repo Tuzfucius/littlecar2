@@ -11,7 +11,6 @@ typedef struct
   UART_HandleTypeDef *uart;
   uint8_t dma_buffer[HOST_RX_DMA_BUFFER_SIZE];
   uint16_t dma_last_pos;
-  uint8_t pc_rx_byte;
   uint8_t print_buffer[HOST_RX_PRINT_BUFFER_SIZE];
   volatile uint16_t print_length;
   volatile uint8_t print_ready;
@@ -26,7 +25,6 @@ static HostRx_Channel_t g_host_rx_channels[HOST_RX_SOURCE_COUNT] = {
     .name = "PC",
     .uart = NULL,
     .dma_last_pos = 0U,
-    .pc_rx_byte = 0U,
     .print_length = 0U,
     .print_ready = 0U,
     .error_ready = 0U,
@@ -38,7 +36,6 @@ static HostRx_Channel_t g_host_rx_channels[HOST_RX_SOURCE_COUNT] = {
     .name = "JETSON",
     .uart = NULL,
     .dma_last_pos = 0U,
-    .pc_rx_byte = 0U,
     .print_length = 0U,
     .print_ready = 0U,
     .error_ready = 0U,
@@ -48,29 +45,16 @@ static HostRx_Channel_t g_host_rx_channels[HOST_RX_SOURCE_COUNT] = {
   }
 };
 
-static HostRx_Status_t HostRx_StartPcReceive(void)
+static HostRx_Status_t HostRx_StartDmaReceive(HostRx_Source_t source)
 {
-  HostRx_Channel_t *channel = &g_host_rx_channels[HOST_RX_SOURCE_PC];
+  HostRx_Channel_t *channel;
 
-  if (channel->uart == NULL)
+  if (source >= HOST_RX_SOURCE_COUNT)
   {
-    channel->last_status = HOST_RX_STATUS_NOT_READY;
-    return channel->last_status;
+    return HOST_RX_STATUS_INVALID_PARAM;
   }
 
-  if (HAL_UART_Receive_IT(channel->uart, &channel->pc_rx_byte, 1U) != HAL_OK)
-  {
-    channel->last_status = HOST_RX_STATUS_RX_ERROR;
-    return channel->last_status;
-  }
-
-  channel->last_status = HOST_RX_STATUS_OK;
-  return channel->last_status;
-}
-
-static HostRx_Status_t HostRx_StartJetsonReceive(void)
-{
-  HostRx_Channel_t *channel = &g_host_rx_channels[HOST_RX_SOURCE_JETSON];
+  channel = &g_host_rx_channels[source];
 
   if (channel->uart == NULL)
   {
@@ -104,7 +88,6 @@ static uint8_t HostRx_IsVisibleAscii(uint8_t byte)
 static void HostRx_ResetChannel(HostRx_Channel_t *channel)
 {
   channel->dma_last_pos = 0U;
-  channel->pc_rx_byte = 0U;
   channel->print_length = 0U;
   channel->print_ready = 0U;
   channel->error_ready = 0U;
@@ -150,10 +133,17 @@ static void HostRx_AppendReceivedData(HostRx_Source_t source, const uint8_t *dat
   }
 }
 
-static void HostRx_HandleJetsonRxEvent(uint16_t size)
+static void HostRx_HandleDmaRxEvent(HostRx_Source_t source, uint16_t size)
 {
-  HostRx_Channel_t *channel = &g_host_rx_channels[HOST_RX_SOURCE_JETSON];
+  HostRx_Channel_t *channel;
   uint16_t current_pos = size;
+
+  if (source >= HOST_RX_SOURCE_COUNT)
+  {
+    return;
+  }
+
+  channel = &g_host_rx_channels[source];
 
   if (current_pos > HOST_RX_DMA_BUFFER_SIZE)
   {
@@ -167,18 +157,18 @@ static void HostRx_HandleJetsonRxEvent(uint16_t size)
 
   if (current_pos > channel->dma_last_pos)
   {
-    HostRx_AppendReceivedData(HOST_RX_SOURCE_JETSON,
+    HostRx_AppendReceivedData(source,
                               &channel->dma_buffer[channel->dma_last_pos],
                               (uint16_t)(current_pos - channel->dma_last_pos));
   }
   else
   {
-    HostRx_AppendReceivedData(HOST_RX_SOURCE_JETSON,
+    HostRx_AppendReceivedData(source,
                               &channel->dma_buffer[channel->dma_last_pos],
                               (uint16_t)(HOST_RX_DMA_BUFFER_SIZE - channel->dma_last_pos));
     if (current_pos > 0U)
     {
-      HostRx_AppendReceivedData(HOST_RX_SOURCE_JETSON, &channel->dma_buffer[0], current_pos);
+      HostRx_AppendReceivedData(source, &channel->dma_buffer[0], current_pos);
     }
   }
 
@@ -279,7 +269,7 @@ HostRx_Status_t HostRx_InitPc(UART_HandleTypeDef *huart)
 
   channel->uart = huart;
   HostRx_ResetChannel(channel);
-  return HostRx_StartPcReceive();
+  return HostRx_StartDmaReceive(HOST_RX_SOURCE_PC);
 }
 
 HostRx_Status_t HostRx_InitJetson(UART_HandleTypeDef *huart)
@@ -294,7 +284,7 @@ HostRx_Status_t HostRx_InitJetson(UART_HandleTypeDef *huart)
 
   channel->uart = huart;
   HostRx_ResetChannel(channel);
-  return HostRx_StartJetsonReceive();
+  return HostRx_StartDmaReceive(HOST_RX_SOURCE_JETSON);
 }
 
 void HostRx_Poll(void)
@@ -303,24 +293,18 @@ void HostRx_Poll(void)
   HostRx_PrintChannel(&g_host_rx_channels[HOST_RX_SOURCE_JETSON]);
 }
 
-void HostRx_OnPcByteReceived(UART_HandleTypeDef *huart)
+void HostRx_OnUartRxEvent(UART_HandleTypeDef *huart, uint16_t size)
 {
-  HostRx_Channel_t *channel = &g_host_rx_channels[HOST_RX_SOURCE_PC];
+  HostRx_Source_t source;
 
-  if ((channel->uart != NULL) && (huart == channel->uart))
+  for (source = HOST_RX_SOURCE_PC; source < HOST_RX_SOURCE_COUNT; ++source)
   {
-    HostRx_AppendReceivedData(HOST_RX_SOURCE_PC, &channel->pc_rx_byte, 1U);
-    (void)HostRx_StartPcReceive();
-  }
-}
-
-void HostRx_OnJetsonUartRxEvent(UART_HandleTypeDef *huart, uint16_t size)
-{
-  HostRx_Channel_t *channel = &g_host_rx_channels[HOST_RX_SOURCE_JETSON];
-
-  if ((channel->uart != NULL) && (huart == channel->uart))
-  {
-    HostRx_HandleJetsonRxEvent(size);
+    HostRx_Channel_t *channel = &g_host_rx_channels[source];
+    if ((channel->uart != NULL) && (huart == channel->uart))
+    {
+      HostRx_HandleDmaRxEvent(source, size);
+      return;
+    }
   }
 }
 
@@ -334,7 +318,7 @@ void HostRx_OnUartError(UART_HandleTypeDef *huart)
     pc_channel->uart_error_code = huart->ErrorCode;
     pc_channel->error_ready = 1U;
     pc_channel->last_status = HOST_RX_STATUS_RX_ERROR;
-    (void)HostRx_StartPcReceive();
+    (void)HostRx_StartDmaReceive(HOST_RX_SOURCE_PC);
   }
 
   if ((jetson_channel->uart != NULL) && (huart == jetson_channel->uart))
@@ -342,7 +326,7 @@ void HostRx_OnUartError(UART_HandleTypeDef *huart)
     jetson_channel->uart_error_code = huart->ErrorCode;
     jetson_channel->error_ready = 1U;
     jetson_channel->last_status = HOST_RX_STATUS_RX_ERROR;
-    (void)HostRx_StartJetsonReceive();
+    (void)HostRx_StartDmaReceive(HOST_RX_SOURCE_JETSON);
   }
 }
 
