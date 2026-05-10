@@ -47,10 +47,10 @@
 
 ## 7. PC 与 Jetson 原始接收调试模块
 - 调试实现位于 `Core/Inc/host_rx.h` 和 `Core/Src/host_rx.c`
-- PC 使用 `USART1`，参数为 `115200 8N1`，接收采用 `HAL_UART_Receive_IT()` 单字节中断方式
+- PC 使用 `USART1`，参数为 `115200 8N1`，接收采用 `DMA Circular + UART 空闲中断`
 - Jetson 使用 `USART6`，参数为 `115200 8N1`，接收采用 `DMA Circular + UART 空闲中断`
 - CubeMX 中 `PC6 / USART6_TX` 和 `PC7 / USART6_RX` 均配置为 `Pull-up`
-- `main.c` 只负责调用 `HostRx_InitPc(&huart1)`、`HostRx_InitJetson(&huart6)`、`HostRx_Poll()`，以及在 HAL UART 回调中分发 `USART1` 和 `USART6`
+- `main.c` 只负责调用 `HostRx_InitPc(&huart1)`、`HostRx_InitJetson(&huart6)`、`HostRx_Poll()`，以及在 `HAL_UARTEx_RxEventCallback()` 中分发 `USART1` 和 `USART6`
 - 调试输出通过现有 `printf` 从 `USART1` 输出，所以 PC 端会同时看到 STM32 日志和 PC 输入回显日志
 - PC 发送 `hello\r\n` 时，正常输出应包含 `PC RX len=7 hex=68 65 6C 6C 6F 0D 0A ascii=hello\r\n`
 - Jetson 发送 `hello\r\n` 时，正常输出应包含 `JETSON RX len=7 hex=68 65 6C 6C 6F 0D 0A ascii=hello\r\n`
