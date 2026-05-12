@@ -427,6 +427,11 @@
               <FilePath>../Core/Src/host_rx.c</FilePath>
             </File>
             <File>
+              <FileName>host_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/host_protocol.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>

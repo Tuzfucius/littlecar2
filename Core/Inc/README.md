@@ -10,5 +10,6 @@
 - `wit_imu.h`：WIT 陀螺仪协议层接口
 - `host_rx.h`：PC 与 Jetson 原始接收统一封装接口，仅用于链路调试打印
 - `jetson_debug.h`：Jetson USART6 原始接收调试接口，仅用于通信联调打印
+- `host_protocol.h`：上下位机协议解析接口，用于接收字节流、执行协议命令并返回 ACK
 - `ops_sensor.h`：OPS 定位系统协议层接口
 - `chassis_motion.h`：基于 Emm_V5 的麦克纳姆轮底盘高层运动接口，包含电机 ID、方向修正和各动作平滑预设参数

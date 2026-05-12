@@ -1,4 +1,5 @@
 #include "host_rx.h"
+#include "host_protocol.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -106,6 +107,9 @@ static void HostRx_AppendReceivedData(HostRx_Source_t source, const uint8_t *dat
   {
     return;
   }
+
+  /* 原始接收数据同时送入上下位机协议解析层。 */
+  HostProtocol_OnBytes((HostProtocol_Source_t)source, data, length);
 
   channel = &g_host_rx_channels[source];
 
@@ -269,6 +273,7 @@ HostRx_Status_t HostRx_InitPc(UART_HandleTypeDef *huart)
 
   channel->uart = huart;
   HostRx_ResetChannel(channel);
+  HostProtocol_RegisterSource(HOST_PROTOCOL_SOURCE_PC, huart);
   return HostRx_StartDmaReceive(HOST_RX_SOURCE_PC);
 }
 
@@ -284,11 +289,13 @@ HostRx_Status_t HostRx_InitJetson(UART_HandleTypeDef *huart)
 
   channel->uart = huart;
   HostRx_ResetChannel(channel);
+  HostProtocol_RegisterSource(HOST_PROTOCOL_SOURCE_JETSON, huart);
   return HostRx_StartDmaReceive(HOST_RX_SOURCE_JETSON);
 }
 
 void HostRx_Poll(void)
 {
+  HostProtocol_Poll();
   HostRx_PrintChannel(&g_host_rx_channels[HOST_RX_SOURCE_PC]);
   HostRx_PrintChannel(&g_host_rx_channels[HOST_RX_SOURCE_JETSON]);
 }

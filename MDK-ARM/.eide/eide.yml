@@ -43,6 +43,8 @@ virtualFolder:
                 - path: ../Core/Src/chassis_motion.c
                 - path: ../Core/Inc/host_rx.h
                 - path: ../Core/Src/host_rx.c
+                - path: ../Core/Inc/host_protocol.h
+                - path: ../Core/Src/host_protocol.c
               folders: []
     - name: Drivers
       files: []

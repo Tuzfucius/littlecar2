@@ -1,4 +1,5 @@
 #include "jetson_debug.h"
+#include "host_protocol.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -57,6 +58,9 @@ static void JetsonDebug_AppendReceivedData(const uint8_t *data, uint16_t length)
   {
     return;
   }
+
+  /* 兼容旧 Jetson 调试入口，将收到的字节交给统一协议解析层。 */
+  HostProtocol_OnBytes(HOST_PROTOCOL_SOURCE_JETSON, data, length);
 
   if (g_jetson_print_length >= JETSON_DEBUG_PRINT_BUFFER_SIZE)
   {
@@ -131,6 +135,7 @@ JetsonDebug_Status_t JetsonDebug_Init(UART_HandleTypeDef *huart)
   g_jetson_uart_error_code = 0U;
   memset(g_jetson_rx_dma_buffer, 0, sizeof(g_jetson_rx_dma_buffer));
   memset(g_jetson_print_buffer, 0, sizeof(g_jetson_print_buffer));
+  HostProtocol_RegisterSource(HOST_PROTOCOL_SOURCE_JETSON, huart);
 
   return JetsonDebug_StartReceive();
 }
@@ -145,8 +150,11 @@ void JetsonDebug_Poll(void)
 
   if ((g_jetson_print_ready == 0U) && (g_jetson_error_ready == 0U))
   {
+    HostProtocol_Poll();
     return;
   }
+
+  HostProtocol_Poll();
 
   __disable_irq();
   error_code = g_jetson_uart_error_code;
