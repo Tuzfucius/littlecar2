@@ -27,6 +27,7 @@
 #include "sensor_wit.h"
 #include "drive_emm.h"
 #include "advance_chassis.h"
+#include "advance_world.h"
 #include "comm_pc.h"
 #include "car_pose.h"
 
@@ -39,6 +40,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define ENABLE_DATOU_POWERON_TEST ((uint8_t)0U)
+#define WORLD_ORIGIN_STATIC_WAIT_MS ((uint32_t)15000U)
 
 /* USER CODE END PD */
 
@@ -63,6 +66,7 @@ DMA_HandleTypeDef hdma_usart6_tx;
 
 /* USER CODE BEGIN PV */
 // static uint32_t g_wit_print_tick = 0U;
+static uint32_t g_world_origin_retry_tick = 0U;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -174,6 +178,7 @@ int main(void)
   OPS_Init(&huart5);
   WIT_Init();
   CarPose_Init();
+  AdvanceWorld_Init();
 
   if (HostRx_InitPc(&huart1) != comm_pc_STATUS_OK)
   {
@@ -186,10 +191,23 @@ int main(void)
   }
 
   printf("USART1 printf ready\r\n");
-  HAL_Delay(1000);
+  HAL_Delay(100);
 
+#if ENABLE_DATOU_POWERON_TEST
   testEmmV5Datou(1);
   HAL_Delay(500);
+#endif
+
+  printf("OPS static init wait %lu ms\r\n", (unsigned long)WORLD_ORIGIN_STATIC_WAIT_MS);
+  HAL_Delay(WORLD_ORIGIN_STATIC_WAIT_MS);
+  if (AdvanceWorld_ResetOrigin() == ADVANCE_WORLD_STATUS_OK)
+  {
+    printf("AdvanceWorld origin ready\r\n");
+  }
+  else
+  {
+    printf("AdvanceWorld origin failed, keep polling OPS\r\n");
+  }
 
 
   /* USER CODE END 2 */
@@ -204,6 +222,14 @@ int main(void)
     // BusServo_Poll();
     OPS_Poll();
     WIT_Poll();
+    AdvanceWorld_Poll();
+    if ((AdvanceWorld_GetPose()->origin_ready == 0U) &&
+        ((HAL_GetTick() - g_world_origin_retry_tick) >= 1000U))
+    {
+      g_world_origin_retry_tick = HAL_GetTick();
+      (void)AdvanceWorld_ResetOrigin();
+    }
+    AdvanceWorld_PrintDebug();
     HostRx_Poll();
     situation_led();
   }
