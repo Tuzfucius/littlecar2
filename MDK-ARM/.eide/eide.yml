@@ -37,8 +37,6 @@ virtualFolder:
                 - path: ../Core/Inc/sensor_ops.h
                 - path: ../Core/Inc/sensor_wit.h
                 - path: ../Core/Src/advance_chassis.c
-                - path: ../Core/Inc/advance_world.h
-                - path: ../Core/Src/advance_world.c
                 - path: ../Core/Src/car_pose.c
                 - path: ../Core/Src/comm_jetson.c
                 - path: ../Core/Src/comm_pc.c
@@ -47,6 +45,8 @@ virtualFolder:
                 - path: ../Core/Src/drive_emm.c
                 - path: ../Core/Src/sensor_ops.c
                 - path: ../Core/Src/sensor_wit.c
+                - path: ../Core/Src/advance_world.c
+                - path: ../Core/Inc/advance_world.h
               folders: []
     - name: Drivers
       files: []
