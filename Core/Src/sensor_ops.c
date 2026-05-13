@@ -268,3 +268,8 @@ OPS_Status_t OPS_GetPose(OPS_Pose_t *pose)
   OPS_CopyPose(pose);
   return (pose->valid != 0U) ? OPS_STATUS_OK : OPS_STATUS_NO_DATA;
 }
+
+const volatile OPS_Pose_t *OPS_GetPoseRef(void)
+{
+  return &g_ops_pose;
+}

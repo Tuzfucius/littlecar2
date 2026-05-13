@@ -28,6 +28,7 @@
 #include "drive_emm.h"
 #include "advance_chassis.h"
 #include "comm_pc.h"
+#include "car_pose.h"
 
 /* USER CODE END Includes */
 
@@ -172,6 +173,7 @@ int main(void)
   BusServo_Init(&huart4);
   OPS_Init(&huart5);
   WIT_Init();
+  CarPose_Init();
 
   if (HostRx_InitPc(&huart1) != comm_pc_STATUS_OK)
   {
@@ -204,44 +206,6 @@ int main(void)
     WIT_Poll();
     HostRx_Poll();
     situation_led();
-
-    // if ((HAL_GetTick() - g_wit_print_tick) >= 1000U)
-    // {
-    //   const volatile WIT_Data_t *imu = WIT_GetData();
-    //   g_wit_print_tick = HAL_GetTick();
-
-    //   if ((imu->accel_g.valid != 0U) && (imu->gyro_dps.valid != 0U) && (imu->angle_deg.valid != 0U))
-    //   {
-    //     printf("WIT Acc[g] X:%.3f Y:%.3f Z:%.3f | Gyro[dps] X:%.3f Y:%.3f Z:%.3f | Angle[deg] X:%.3f Y:%.3f Z:%.3f\r\n",
-    //            imu->accel_g.x, imu->accel_g.y, imu->accel_g.z,
-    //            imu->gyro_dps.x, imu->gyro_dps.y, imu->gyro_dps.z,
-    //            imu->angle_deg.x, imu->angle_deg.y, imu->angle_deg.z);
-    //   }
-    //   else
-    //   {
-    //     printf("WIT waiting... accel:%u gyro:%u angle:%u\r\n",
-    //            (unsigned int)imu->accel_g.valid,
-    //            (unsigned int)imu->gyro_dps.valid,
-    //            (unsigned int)imu->angle_deg.valid);
-    //   }
-    // }
-
-    // 每 100ms 打印一次 OPS 数据，避免打印太快看不清
-    static uint32_t last_print_tick = 0;
-    if (HAL_GetTick() - last_print_tick >= 100)
-    {
-      last_print_tick = HAL_GetTick();
-
-      OPS_Pose_t pose;
-      if (OPS_GetPose(&pose) == OPS_STATUS_OK)
-      {
-        printf("OPS -> Z:%.2f, X:%.1f, Y:%.1f\r\n", pose.zangle_deg, pose.pos_x_mm, pose.pos_y_mm);
-      }
-      else
-      {
-        printf("OPS -> Waiting for data...\r\n");
-      }
-    }
   }
   /* USER CODE END 3 */
 }
