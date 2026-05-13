@@ -26,6 +26,26 @@ static float AdvanceWorld_DegToRad(float deg)
   return deg * ADVANCE_WORLD_PI / 180.0f;
 }
 
+static float AdvanceWorld_NormalizeSensorYawDeg(float yaw_deg, uint8_t reversed)
+{
+  if (reversed != 0U)
+  {
+    yaw_deg = -yaw_deg;
+  }
+
+  return AdvanceWorld_WrapAngleDeg(yaw_deg);
+}
+
+static float AdvanceWorld_GetOpsYawDeg(void)
+{
+  return AdvanceWorld_NormalizeSensorYawDeg(carpose_ops->zangle_deg, ADVANCE_WORLD_OPS_YAW_REVERSED);
+}
+
+static float AdvanceWorld_GetImuYawDeg(void)
+{
+  return AdvanceWorld_NormalizeSensorYawDeg(carpose_imu->angle_deg.z, ADVANCE_WORLD_WIT_YAW_REVERSED);
+}
+
 static uint8_t AdvanceWorld_HasValidOps(void)
 {
   return ((carpose_ops != NULL) && (carpose_ops->valid != 0U)) ? 1U : 0U;
@@ -40,10 +60,10 @@ static float AdvanceWorld_GetRelativeYawDeg(void)
 {
   if ((g_world_origin.imu_yaw_ready != 0U) && (AdvanceWorld_HasValidImuYaw() != 0U))
   {
-    return AdvanceWorld_WrapAngleDeg(carpose_imu->angle_deg.z - g_world_origin.raw_imu_yaw_deg);
+    return AdvanceWorld_WrapAngleDeg(AdvanceWorld_GetImuYawDeg() - g_world_origin.raw_imu_yaw_deg);
   }
 
-  return AdvanceWorld_WrapAngleDeg(carpose_ops->zangle_deg - g_world_origin.raw_yaw_deg);
+  return AdvanceWorld_WrapAngleDeg(AdvanceWorld_GetOpsYawDeg() - g_world_origin.raw_yaw_deg);
 }
 
 static void AdvanceWorld_UpdatePoseFromOps(void)
@@ -94,10 +114,10 @@ AdvanceWorld_Status_t AdvanceWorld_ResetOrigin(void)
 
   g_world_origin.raw_x_mm = carpose_ops->pos_x_mm;
   g_world_origin.raw_y_mm = carpose_ops->pos_y_mm;
-  g_world_origin.raw_yaw_deg = carpose_ops->zangle_deg;
+  g_world_origin.raw_yaw_deg = AdvanceWorld_GetOpsYawDeg();
   if (AdvanceWorld_HasValidImuYaw() != 0U)
   {
-    g_world_origin.raw_imu_yaw_deg = carpose_imu->angle_deg.z;
+    g_world_origin.raw_imu_yaw_deg = AdvanceWorld_GetImuYawDeg();
     g_world_origin.imu_yaw_ready = 1U;
   }
   else

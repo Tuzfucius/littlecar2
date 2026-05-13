@@ -9,6 +9,13 @@ extern "C" {
 
 #define ADVANCE_WORLD_DEBUG_PRINT_MS ((uint32_t)500U)
 
+/*
+ * world yaw 统一约定：俯视小车时，逆时针旋转为角度增大。
+ * 如果某个传感器安装后读数方向相反，将对应宏改为 1。
+ */
+#define ADVANCE_WORLD_OPS_YAW_REVERSED ((uint8_t)0U)
+#define ADVANCE_WORLD_WIT_YAW_REVERSED ((uint8_t)0U)
+
 typedef enum
 {
   ADVANCE_WORLD_STATUS_OK = 0,
