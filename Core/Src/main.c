@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+﻿/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : main.c
@@ -22,13 +22,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include "bus_servo.h"
-#include "ops_sensor.h"
-#include "wit_imu.h"
-#include "Emm_V5.h"
-#include "zdt_stepper.h"
-#include "chassis_motion.h"
-#include "host_rx.h"
+#include "drive_bus_servo.h"
+#include "sensor_ops.h"
+#include "sensor_wit.h"
+#include "drive_emm.h"
+#include "advance_chassis.h"
+#include "comm_pc.h"
 
 /* USER CODE END Includes */
 
@@ -89,67 +88,43 @@ int fputc(int ch, FILE *f)
   return ch;
 }
 
-void testDatou(uint8_t id)
-{
-  Datou_En_Control(&huart3, id, true, false);
-  HAL_Delay(100);
-
-  Datou_Vel_Control(&huart3, id, 0, 300, 10, false);
-  HAL_Delay(1000);
-  Datou_Vel_Control(&huart3, id, 0, 1000, 10, false);
-  HAL_Delay(1000);
-  Datou_Vel_Control(&huart3, id, 0, 200, 10, false);
-  HAL_Delay(1000);
-  Datou_Stop_Now(&huart3, id, false);
-  HAL_Delay(1000);
-
-  Datou_Vel_Control(&huart3, id, 1, 300, 10, false);
-  HAL_Delay(1000);
-  Datou_Vel_Control(&huart3, id, 1, 1000, 10, false);
-  HAL_Delay(1000);
-  Datou_Vel_Control(&huart3, id, 1, 200, 10, false);
-  HAL_Delay(1000);
-
-  Datou_Stop_Now(&huart3, id, false);
-}
-
 void testEmmV5Datou(uint8_t id)
 {
   const uint16_t vel_rpm = 300U;
   const uint8_t acc = 10U;
   const uint32_t one_turn_pulse = 3200U;
 
-  Emm_V5_En_Control(id, true, false);
+  drive_emm_En_Control(id, true, false);
   HAL_Delay(100);
 
-  Emm_V5_Vel_Control(id, 0U, vel_rpm, acc, false);
+  drive_emm_Vel_Control(id, 0U, vel_rpm, acc, false);
   HAL_Delay(1500);
-  Emm_V5_Stop_Now(id, false);
+  drive_emm_Stop_Now(id, false);
   HAL_Delay(500);
 
-  Emm_V5_Vel_Control(id, 1U, vel_rpm, acc, false);
+  drive_emm_Vel_Control(id, 1U, vel_rpm, acc, false);
   HAL_Delay(1500);
-  Emm_V5_Stop_Now(id, false);
+  drive_emm_Stop_Now(id, false);
   HAL_Delay(500);
 
-  Emm_V5_Pos_Control(id, 0U, vel_rpm, acc, one_turn_pulse, false, false);
+  drive_emm_Pos_Control(id, 0U, vel_rpm, acc, one_turn_pulse, false, false);
   HAL_Delay(3000);
 
-  Emm_V5_Pos_Control(id, 1U, vel_rpm, acc, one_turn_pulse, false, false);
+  drive_emm_Pos_Control(id, 1U, vel_rpm, acc, one_turn_pulse, false, false);
   HAL_Delay(3000);
 
-  Emm_V5_Stop_Now(id, false);
+  drive_emm_Stop_Now(id, false);
 }
 
 void situation_led()
 {
-  // 状态指示灯：每 500ms 翻转一次 GPIO 状态
-  // 如果烧录成功并正常运行，你会看到板子上的灯在闪烁
+  // 鐘舵€佹寚绀虹伅锛氭瘡 500ms 缈昏浆涓€娆?GPIO 鐘舵€?
+  // 濡傛灉鐑у綍鎴愬姛骞舵甯歌繍琛岋紝浣犱細鐪嬪埌鏉垮瓙涓婄殑鐏湪闂儊
   static uint32_t led_tick = 0;
   if (HAL_GetTick() - led_tick >= 500)
   {
     led_tick = HAL_GetTick();
-    // 翻转 PF9 (红色 LED) 和 PF10 (绿色 LED)
+    // 缈昏浆 PF9 (绾㈣壊 LED) 鍜?PF10 (缁胯壊 LED)
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
   }
@@ -198,12 +173,12 @@ int main(void)
   OPS_Init(&huart5);
   WIT_Init();
 
-  if (HostRx_InitPc(&huart1) != HOST_RX_STATUS_OK)
+  if (HostRx_InitPc(&huart1) != comm_pc_STATUS_OK)
   {
     printf("HostRx PC init failed\r\n");
   }
 
-  if (HostRx_InitJetson(&huart6) != HOST_RX_STATUS_OK)
+  if (HostRx_InitJetson(&huart6) != comm_pc_STATUS_OK)
   {
     printf("HostRx Jetson init failed\r\n");
   }
@@ -211,8 +186,8 @@ int main(void)
   printf("USART1 printf ready\r\n");
   HAL_Delay(1000);
 
-  // testEmmV5Datou(1);
-  // HAL_Delay(500);
+  testEmmV5Datou(1);
+  HAL_Delay(500);
 
 
   /* USER CODE END 2 */
@@ -251,22 +226,22 @@ int main(void)
     //   }
     // }
 
-    // // 每 100ms 打印一次 OPS 数据，避免打印太快看不清
-    // static uint32_t last_print_tick = 0;
-    // if (HAL_GetTick() - last_print_tick >= 100)
-    // {
-    //   last_print_tick = HAL_GetTick();
+    // 姣?100ms 鎵撳嵃涓€娆?OPS 鏁版嵁锛岄伩鍏嶆墦鍗板お蹇湅涓嶆竻
+    static uint32_t last_print_tick = 0;
+    if (HAL_GetTick() - last_print_tick >= 100)
+    {
+      last_print_tick = HAL_GetTick();
 
-    //   OPS_Pose_t pose;
-    //   if (OPS_GetPose(&pose) == OPS_STATUS_OK)
-    //   {
-    //     printf("OPS -> Z:%.2f, X:%.1f, Y:%.1f\r\n", pose.zangle_deg, pose.pos_x_mm, pose.pos_y_mm);
-    //   }
-    //   else
-    //   {
-    //     printf("OPS -> Waiting for data...\r\n");
-    //   }
-    // }
+      OPS_Pose_t pose;
+      if (OPS_GetPose(&pose) == OPS_STATUS_OK)
+      {
+        printf("OPS -> Z:%.2f, X:%.1f, Y:%.1f\r\n", pose.zangle_deg, pose.pos_x_mm, pose.pos_y_mm);
+      }
+      else
+      {
+        printf("OPS -> Waiting for data...\r\n");
+      }
+    }
   }
   /* USER CODE END 3 */
 }
