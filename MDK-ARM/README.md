@@ -96,7 +96,7 @@
 - 文件：`Core/Inc/advance_world.h`、`Core/Src/advance_world.c`
 - 用途：维护工程统一的 world 坐标系，完成 OPS 原始坐标到 world 位姿的转换，并提供 world/base 速度变换。
 - 坐标定义：`world +Y` 为小车初始车头方向，`world +X` 为初始右侧，`yaw=0` 朝 `world +Y`，yaw 逆时针为正。
-- 初始化：OPS 静止初始化后调用 `AdvanceWorld_ResetOrigin()`，将当前 OPS 位置和航向记录为 world 原点。
+- 初始化：OPS / WIT 掉电后会保留自身历史状态，软件不假设其上电为零；OPS 静止初始化后调用 `AdvanceWorld_ResetOrigin()`，将当前 OPS 位置、OPS 航向和 WIT yaw 记录为本次 world 坐标系零点。
 - 典型接口：`AdvanceWorld_Init()`、`AdvanceWorld_Poll()`、`AdvanceWorld_GetPose()`、`AdvanceWorld_WorldToBodyVelocity()`。
 
 ### 4.7 PC / Jetson 通信
