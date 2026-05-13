@@ -12,7 +12,7 @@
 - `sensor_*`：传感器相关模块，例如 `sensor_wit`、`sensor_ops`。
 - `drive_*`：执行器和运动驱动相关模块，例如 `drive_emm`、`drive_bus_servo`。
 - `comm_*`：通信相关模块，例如 `comm_pc`、`comm_jetson`、`comm_protocol`。
-- `advance_*`：基于底层驱动封装出的高级动作或高级命令，例如 `advance_chassis`。
+- `advance_*`：基于底层驱动或传感器数据封装出的高级动作、坐标系或业务能力，例如 `advance_chassis`、`advance_world`。
 
 ## 当前主要模块
 
@@ -24,3 +24,4 @@
 - `comm_jetson`：Jetson 原始接收调试兼容入口。
 - `comm_protocol`：上位机二进制协议解析、命令入队、ACK 回发。
 - `advance_chassis`：基于 `drive_emm` 的麦克纳姆底盘高级运动接口。
+- `advance_world`：维护 world 坐标系、全局位姿和 world/base 速度变换。

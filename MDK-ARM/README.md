@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | `sensor_` | 传感器接入、解析和数据缓存 | `sensor_wit.*`、`sensor_ops.*` |
 | `drive_` | 底层执行器、驱动协议和设备控制 | `drive_emm.*`、`drive_bus_servo.*` |
-| `advance_` | 高级运动、组合动作和业务能力封装 | `advance_chassis.*` |
+| `advance_` | 高级运动、组合动作、坐标系和业务能力封装 | `advance_chassis.*`、`advance_world.*` |
 | `comm_` | PC / Jetson 通信、协议解析、收发桥接 | `comm_pc.*`、`comm_jetson.*`、`comm_protocol.*` |
 | `car_` | 车辆自身状态、属性和全局数据视图 | `car_pose.*` |
 
@@ -91,7 +91,15 @@
 - 配置位置：四个电机 ID、方向修正、默认 RPM、默认加速度和预设动作参数集中在 `advance_chassis.h`。
 - 典型接口：`Chassis_Enable()`、`Chassis_Stop()`、`Chassis_SetMotorRPMEx()`、`Chassis_MoveMecanumEx()`。
 
-### 4.6 PC / Jetson 通信
+### 4.6 全局坐标系
+
+- 文件：`Core/Inc/advance_world.h`、`Core/Src/advance_world.c`
+- 用途：维护工程统一的 world 坐标系，完成 OPS 原始坐标到 world 位姿的转换，并提供 world/base 速度变换。
+- 坐标定义：`world +Y` 为小车初始车头方向，`world +X` 为初始右侧，`yaw=0` 朝 `world +Y`，yaw 逆时针为正。
+- 初始化：OPS 静止初始化后调用 `AdvanceWorld_ResetOrigin()`，将当前 OPS 位置和航向记录为 world 原点。
+- 典型接口：`AdvanceWorld_Init()`、`AdvanceWorld_Poll()`、`AdvanceWorld_GetPose()`、`AdvanceWorld_WorldToBodyVelocity()`。
+
+### 4.7 PC / Jetson 通信
 
 - 文件：`Core/Inc/comm_pc.h`、`Core/Src/comm_pc.c`
 - 用途：PC 和 Jetson 双路原始接收、日志输出和协议桥接。
@@ -100,20 +108,20 @@
 - `comm_pc.c` 会把原始字节输入 `comm_protocol.c`，用于后续上位机二进制协议解析。
 - 典型接口：`HostRx_InitPc()`、`HostRx_InitJetson()`、`HostRx_Poll()`、`HostRx_OnUartRxEvent()`。
 
-### 4.7 Jetson 调试兼容层
+### 4.8 Jetson 调试兼容层
 
 - 文件：`Core/Inc/comm_jetson.h`、`Core/Src/comm_jetson.c`
 - 用途：保留 Jetson 原始接收调试兼容入口。
 - 当前建议：新通信逻辑优先进入 `comm_pc.*` 和 `comm_protocol.*`，避免再扩展独立调试分支。
 
-### 4.8 上位机协议层
+### 4.9 上位机协议层
 
 - 文件：`Core/Inc/comm_protocol.h`、`Core/Src/comm_protocol.c`
 - 用途：PC / Jetson 共用的二进制协议找帧、CRC 校验、命令队列、ACK 回发和主循环分发。
 - 当前边界：UART 回调只搬运原始字节，完整命令在 `HostProtocol_Poll()` 中执行。
 - 典型接口：`HostProtocol_RegisterSource()`、`HostProtocol_OnBytes()`、`HostProtocol_Poll()`。
 
-### 4.9 车辆状态视图
+### 4.10 车辆状态视图
 
 - 文件：`Core/Inc/car_pose.h`、`Core/Src/car_pose.c`
 - 用途：汇总车辆自身位姿相关数据指针，作为上层读取 IMU 和 OPS 数据的统一入口。

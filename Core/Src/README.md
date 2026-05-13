@@ -14,3 +14,4 @@
 - `comm_jetson.c`：Jetson 原始接收调试兼容实现。
 - `comm_protocol.c`：上位机二进制协议找帧、CRC 校验、命令分发和 ACK 回发。
 - `advance_chassis.c`：基于 `drive_emm` 多电机命令实现底盘前进、后退、平移、旋转和差速转向。
+- `advance_world.c`：基于 OPS 原始位姿维护工程 world 坐标系，并提供 world/base 坐标变换。

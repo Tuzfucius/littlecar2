@@ -13,3 +13,4 @@
 - `comm_jetson.h`：Jetson 原始接收调试兼容接口。
 - `comm_protocol.h`：上位机二进制协议解析接口。
 - `advance_chassis.h`：麦克纳姆底盘高级运动接口。
+- `advance_world.h`：全局坐标系、world 位姿和坐标变换接口。
