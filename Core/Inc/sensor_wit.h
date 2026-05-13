@@ -1,5 +1,5 @@
-#ifndef __sensor_wit_H__
-#define __sensor_wit_H__
+#ifndef __WIT_IMU_H__
+#define __WIT_IMU_H__
 
 #ifdef __cplusplus
 extern "C" {

@@ -118,13 +118,13 @@ void testEmmV5Datou(uint8_t id)
 
 void situation_led()
 {
-  // 鐘舵€佹寚绀虹伅锛氭瘡 500ms 缈昏浆涓€娆?GPIO 鐘舵€?
-  // 濡傛灉鐑у綍鎴愬姛骞舵甯歌繍琛岋紝浣犱細鐪嬪埌鏉垮瓙涓婄殑鐏湪闂儊
+  // 状态指示灯：每 500ms 翻转一次 GPIO 状态
+  // 如果烧录成功并正常运行，可以看到板载 LED 闪烁
   static uint32_t led_tick = 0;
   if (HAL_GetTick() - led_tick >= 500)
   {
     led_tick = HAL_GetTick();
-    // 缈昏浆 PF9 (绾㈣壊 LED) 鍜?PF10 (缁胯壊 LED)
+    // 翻转 PF9 红色 LED 和 PF10 绿色 LED
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
     HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_10);
   }
@@ -226,7 +226,7 @@ int main(void)
     //   }
     // }
 
-    // 姣?100ms 鎵撳嵃涓€娆?OPS 鏁版嵁锛岄伩鍏嶆墦鍗板お蹇湅涓嶆竻
+    // 每 100ms 打印一次 OPS 数据，避免打印太快看不清
     static uint32_t last_print_tick = 0;
     if (HAL_GetTick() - last_print_tick >= 100)
     {
