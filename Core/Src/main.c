@@ -40,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ENABLE_DATOU_POWERON_TEST ((uint8_t)0U)
+#define ENABLE_DATOU_POWERON_TEST 0
 #define WORLD_ORIGIN_STATIC_WAIT_MS ((uint32_t)15000U)
 
 /* USER CODE END PD */

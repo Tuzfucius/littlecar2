@@ -106,7 +106,12 @@ AdvanceWorld_Status_t AdvanceWorld_GetPoseCopy(WorldPose2D_t *pose)
     return ADVANCE_WORLD_STATUS_NOT_READY;
   }
 
-  *pose = g_world_pose;
+  pose->x_mm = g_world_pose.x_mm;
+  pose->y_mm = g_world_pose.y_mm;
+  pose->yaw_deg = g_world_pose.yaw_deg;
+  pose->updated_tick = g_world_pose.updated_tick;
+  pose->valid = g_world_pose.valid;
+  pose->origin_ready = g_world_pose.origin_ready;
 
   if (g_world_origin.ready == 0U)
   {
@@ -188,17 +193,17 @@ void AdvanceWorld_PrintDebug(void)
 
   if (carpose_ops != NULL)
   {
-    printf("OPS_RAW: valid=%u x=%.1f y=%.1f yaw=%.2f\r\n",
+    printf("OPS_RAW: valid=%u x_mm=%ld y_mm=%ld yaw_cdeg=%ld\r\n",
            carpose_ops->valid,
-           carpose_ops->pos_x_mm,
-           carpose_ops->pos_y_mm,
-           carpose_ops->zangle_deg);
+           (long)carpose_ops->pos_x_mm,
+           (long)carpose_ops->pos_y_mm,
+           (long)(carpose_ops->zangle_deg * 100.0f));
   }
 
-  printf("POSE_WORLD: valid=%u origin=%u x=%.1f y=%.1f yaw=%.2f\r\n",
+  printf("POSE_WORLD: valid=%u origin=%u x_mm=%ld y_mm=%ld yaw_cdeg=%ld\r\n",
          g_world_pose.valid,
          g_world_pose.origin_ready,
-         g_world_pose.x_mm,
-         g_world_pose.y_mm,
-         g_world_pose.yaw_deg);
+         (long)g_world_pose.x_mm,
+         (long)g_world_pose.y_mm,
+         (long)(g_world_pose.yaw_deg * 100.0f));
 }
