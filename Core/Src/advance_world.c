@@ -12,7 +12,9 @@ typedef struct
   float raw_x_mm;
   float raw_y_mm;
   float raw_yaw_deg;
+  float raw_imu_yaw_deg;
   uint8_t ready;
+  uint8_t imu_yaw_ready;
 } AdvanceWorld_Origin_t;
 
 static volatile WorldPose2D_t g_world_pose = {0};
@@ -27,6 +29,21 @@ static float AdvanceWorld_DegToRad(float deg)
 static uint8_t AdvanceWorld_HasValidOps(void)
 {
   return ((carpose_ops != NULL) && (carpose_ops->valid != 0U)) ? 1U : 0U;
+}
+
+static uint8_t AdvanceWorld_HasValidImuYaw(void)
+{
+  return ((carpose_imu != NULL) && (carpose_imu->angle_deg.valid != 0U)) ? 1U : 0U;
+}
+
+static float AdvanceWorld_GetRelativeYawDeg(void)
+{
+  if ((g_world_origin.imu_yaw_ready != 0U) && (AdvanceWorld_HasValidImuYaw() != 0U))
+  {
+    return AdvanceWorld_WrapAngleDeg(carpose_imu->angle_deg.z - g_world_origin.raw_imu_yaw_deg);
+  }
+
+  return AdvanceWorld_WrapAngleDeg(carpose_ops->zangle_deg - g_world_origin.raw_yaw_deg);
 }
 
 static void AdvanceWorld_UpdatePoseFromOps(void)
@@ -52,7 +69,7 @@ static void AdvanceWorld_UpdatePoseFromOps(void)
 
   g_world_pose.x_mm = cos_yaw * dx_raw + sin_yaw * dy_raw;
   g_world_pose.y_mm = -sin_yaw * dx_raw + cos_yaw * dy_raw;
-  g_world_pose.yaw_deg = AdvanceWorld_WrapAngleDeg(carpose_ops->zangle_deg - g_world_origin.raw_yaw_deg);
+  g_world_pose.yaw_deg = AdvanceWorld_GetRelativeYawDeg();
   g_world_pose.updated_tick = carpose_ops->updated_tick;
   g_world_pose.valid = 1U;
   g_world_pose.origin_ready = 1U;
@@ -78,6 +95,16 @@ AdvanceWorld_Status_t AdvanceWorld_ResetOrigin(void)
   g_world_origin.raw_x_mm = carpose_ops->pos_x_mm;
   g_world_origin.raw_y_mm = carpose_ops->pos_y_mm;
   g_world_origin.raw_yaw_deg = carpose_ops->zangle_deg;
+  if (AdvanceWorld_HasValidImuYaw() != 0U)
+  {
+    g_world_origin.raw_imu_yaw_deg = carpose_imu->angle_deg.z;
+    g_world_origin.imu_yaw_ready = 1U;
+  }
+  else
+  {
+    g_world_origin.raw_imu_yaw_deg = 0.0f;
+    g_world_origin.imu_yaw_ready = 0U;
+  }
   g_world_origin.ready = 1U;
 
   g_world_pose.x_mm = 0.0f;
@@ -198,6 +225,14 @@ void AdvanceWorld_PrintDebug(void)
            (long)carpose_ops->pos_x_mm,
            (long)carpose_ops->pos_y_mm,
            (long)(carpose_ops->zangle_deg * 100.0f));
+  }
+
+  if (carpose_imu != NULL)
+  {
+    printf("WIT_RAW: angle_valid=%u yaw_cdeg=%ld origin=%u\r\n",
+           carpose_imu->angle_deg.valid,
+           (long)(carpose_imu->angle_deg.z * 100.0f),
+           g_world_origin.imu_yaw_ready);
   }
 
   printf("POSE_WORLD: valid=%u origin=%u x_mm=%ld y_mm=%ld yaw_cdeg=%ld\r\n",
